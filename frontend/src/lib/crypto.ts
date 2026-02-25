@@ -1,14 +1,19 @@
 import CryptoJS from "crypto-js";
 
-const AES_SECRET_KEY =
-  process.env.AES_SECRET_KEY || "default-aes-key-32-characters!!";
+function getAesSecretKey(): string {
+  const key = process.env.AES_SECRET_KEY;
+  if (!key) {
+    throw new Error("AES_SECRET_KEY environment variable is not set");
+  }
+  return key;
+}
 
 export function encrypt(text: string): string {
-  return CryptoJS.AES.encrypt(text, AES_SECRET_KEY).toString();
+  return CryptoJS.AES.encrypt(text, getAesSecretKey()).toString();
 }
 
 export function decrypt(ciphertext: string): string {
-  const bytes = CryptoJS.AES.decrypt(ciphertext, AES_SECRET_KEY);
+  const bytes = CryptoJS.AES.decrypt(ciphertext, getAesSecretKey());
   return bytes.toString(CryptoJS.enc.Utf8);
 }
 

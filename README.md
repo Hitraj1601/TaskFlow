@@ -143,7 +143,7 @@ sell/
 ├── frontend/                         # Next.js Frontend
 │   ├── package.json
 │   ├── tsconfig.json
-│   ├── next.config.ts                # API proxy rewrites
+│   ├── next.config.ts                # Next.js config & security headers
 │   ├── postcss.config.mjs
 │   ├── eslint.config.mjs
 │   ├── .env.example
