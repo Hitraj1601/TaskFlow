@@ -2,10 +2,5 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "installCommand": "npm install",
-  "env": {
-    "MONGODB_URI": "@mongodb-uri",
-    "JWT_SECRET": "@jwt-secret",
-    "ENCRYPTION_KEY": "@encryption-key"
-  }
+  "installCommand": "npm install"
 }
