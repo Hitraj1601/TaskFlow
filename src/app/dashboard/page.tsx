@@ -28,6 +28,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  role: string;
 }
 
 export default function DashboardPage() {
@@ -48,6 +49,9 @@ export default function DashboardPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [adminUsers, setAdminUsers] = useState<{ _id: string; name: string; email: string; role: string; createdAt: string }[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
 
   // Fetch current user
   useEffect(() => {
@@ -184,11 +188,88 @@ export default function DashboardPage() {
   const inProgressCount = tasks.filter((t) => t.status === "in-progress").length;
   const doneCount = tasks.filter((t) => t.status === "done").length;
 
+  // Fetch admin users
+  const fetchAdminUsers = async () => {
+    setAdminLoading(true);
+    try {
+      const res = await fetch("/api/admin/users");
+      const data = await res.json();
+      if (data.success) {
+        setAdminUsers(data.data.users);
+      }
+    } catch (error) {
+      console.error("Failed to fetch admin users:", error);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar userName={user?.name} />
+      <Navbar userName={user?.name} userRole={user?.role} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Admin Panel Toggle */}
+        {user?.role === "admin" && (
+          <div className="mb-6">
+            <button
+              onClick={() => {
+                setShowAdminPanel(!showAdminPanel);
+                if (!showAdminPanel && adminUsers.length === 0) fetchAdminUsers();
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors shadow-sm cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              {showAdminPanel ? "Hide" : "Show"} Admin Panel
+            </button>
+
+            {showAdminPanel && (
+              <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-6">
+                <h2 className="text-lg font-bold text-purple-900 mb-4">Admin Panel - All Users</h2>
+                {adminLoading ? (
+                  <p className="text-sm text-purple-600">Loading users...</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-purple-700 uppercase bg-purple-100">
+                        <tr>
+                          <th className="px-4 py-3 rounded-tl-lg">Name</th>
+                          <th className="px-4 py-3">Email</th>
+                          <th className="px-4 py-3">Role</th>
+                          <th className="px-4 py-3 rounded-tr-lg">Joined</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {adminUsers.map((u) => (
+                          <tr key={u._id} className="bg-white border-b border-purple-100">
+                            <td className="px-4 py-3 font-medium text-gray-900">{u.name}</td>
+                            <td className="px-4 py-3 text-gray-600">{u.email}</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                u.role === "admin" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-700"
+                              }`}>
+                                {u.role}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {new Date(u.createdAt).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="mt-3 text-xs text-purple-600">
+                      Total users: {adminUsers.length}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>

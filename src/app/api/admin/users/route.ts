@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import User from "@/models/User";
 import { getAuthUser } from "@/lib/auth-api";
 
-export async function GET() {
+// GET /api/admin/users - List all users (admin only)
+export async function GET(_request: NextRequest) {
   try {
     const authUser = await getAuthUser();
     if (!authUser) {
@@ -13,28 +14,29 @@ export async function GET() {
       );
     }
 
-    await dbConnect();
-    const user = await User.findById(authUser.userId);
-    if (!user) {
+    if (authUser.role !== "admin") {
       return NextResponse.json(
-        { success: false, message: "User not found" },
-        { status: 404 }
+        { success: false, message: "Access denied. Admin privileges required." },
+        { status: 403 }
       );
     }
+
+    await dbConnect();
+
+    const users = await User.find()
+      .select("-password")
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({
       success: true,
       data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
+        users,
+        total: users.length,
       },
     });
   } catch (error) {
-    console.error("Get user error:", error);
+    console.error("Admin get users error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

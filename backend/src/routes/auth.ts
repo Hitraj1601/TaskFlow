@@ -45,6 +45,7 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
     const token = signToken({
       userId: user._id.toString(),
       email: user.email,
+      role: user.role,
     });
     setAuthCookie(res, token);
     const encryptedEmail = encrypt(user.email);
@@ -57,6 +58,7 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
           id: user._id,
           name: user.name,
           email: user.email,
+          role: user.role,
           encryptedEmail,
         },
       },
@@ -122,6 +124,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     const token = signToken({
       userId: user._id.toString(),
       email: user.email,
+      role: user.role,
     });
     setAuthCookie(res, token);
     const encryptedEmail = encrypt(user.email);
@@ -134,6 +137,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
           id: user._id,
           name: user.name,
           email: user.email,
+          role: user.role,
           encryptedEmail,
         },
       },
@@ -193,6 +197,7 @@ router.get("/me", async (req: Request, res: Response): Promise<void> => {
           id: user._id,
           name: user.name,
           email: user.email,
+          role: user.role,
         },
       },
     });

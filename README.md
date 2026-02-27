@@ -35,12 +35,19 @@ A production-ready full-stack Task Management Application with a **separated fro
 │  Port: 5000                                      │
 │  ┌──────────────┐  ┌────────────────────────┐    │
 │  │  Auth APIs   │  │     Task APIs          │    │
-│  │ /register    │  │ GET    /api/tasks      │    │
-│  │ /login       │  │ POST   /api/tasks      │    │
-│  │ /logout      │  │ GET    /api/tasks/:id  │    │
-│  │ /me          │  │ PUT    /api/tasks/:id  │    │
-│  └──────────────┘  │ DELETE /api/tasks/:id  │    │
+│  │ /register    │  │ GET    /api/v1/tasks   │    │
+│  │ /login       │  │ POST   /api/v1/tasks   │    │
+│  │ /logout      │  │ GET    /api/v1/tasks/:id│   │
+│  │ /me          │  │ PUT    /api/v1/tasks/:id│   │
+│  └──────────────┘  │ DELETE /api/v1/tasks/:id│   │
 │                     └────────────────────────┘    │
+│  ┌──────────────────────────────────────────┐    │
+│  │  Admin APIs (role: admin)                │    │
+│  │  GET /api/v1/admin/users                 │    │
+│  │  GET /api/v1/admin/tasks                 │    │
+│  │  DELETE /api/v1/admin/tasks/:id          │    │
+│  │  PUT /api/v1/admin/users/:id/role        │    │
+│  └──────────────────────────────────────────┘    │
 │  ┌──────────────────────────────────────────┐    │
 │  │  Security Layer                          │    │
 │  │  • bcrypt password hashing (salt: 12)    │    │
@@ -59,7 +66,8 @@ A production-ready full-stack Task Management Application with a **separated fro
 │  │ - email    │  │ - desc     │                  │
 │  │ - password │  │ - status   │                  │
 │  │   (hashed) │  │ - user ref │                  │
-│  └────────────┘  └────────────┘                  │
+│  │ - role     │  └────────────┘                  │
+│  └────────────┘                                  │
 └──────────────────────────────────────────────────┘
 ```
 
@@ -80,14 +88,17 @@ A production-ready full-stack Task Management Application with a **separated fro
 ### Authentication & Security
 - User registration with input validation
 - Login with email/password
+- **Role-based access control** (user vs admin roles)
 - JWT tokens stored in HTTP-only cookies (not localStorage)
 - Secure cookie flags (HttpOnly, Secure, SameSite)
 - bcrypt password hashing with salt rounds of 12
 - AES-256 encryption for sensitive response payload fields
 - Input sanitization to prevent XSS
 - Proper authorization — users access only their own tasks
+- Admin endpoints for managing all users and tasks
 - Structured error handling with appropriate HTTP status codes
 - Environment variables (never hardcoded)
+- **API versioning** (v1 prefix for all endpoints)
 
 ### Task Management
 - **Create** tasks with title, description, and status
@@ -562,7 +573,9 @@ Delete a task.
 | Payload Encryption | AES-256 via crypto-js |
 | Input Sanitization | XSS prevention, HTML tag removal |
 | Authorization | User-scoped task queries (MongoDB filter) |
+| Role-Based Access | user vs admin roles with middleware enforcement |
 | Route Protection | Next.js middleware (frontend) + Express middleware (backend) |
+| API Versioning | All endpoints versioned under `/api/v1/` |
 | Env Variables | .env / .env.local (never committed) |
 | CORS | Configured for frontend origin only |
 
@@ -575,6 +588,160 @@ Delete a task.
 3. **Cookie Flow**: The backend sets HTTP-only cookies in responses. Since the frontend proxies requests through Next.js rewrites, cookies are set on the frontend's domain, ensuring seamless authentication.
 
 4. **JWT Verification**: The frontend middleware uses `jose` to verify JWTs for route protection (redirect logic). The backend uses `jsonwebtoken` for full JWT operations (sign, verify) in API routes.
+
+---
+
+## API Versioning
+
+All API endpoints are versioned under `/api/v1/` for future-proof scalability:
+
+| Versioned Route | Description |
+|----------------|-------------|
+| `POST /api/v1/auth/register` | Register new user |
+| `POST /api/v1/auth/login` | Authenticate user |
+| `POST /api/v1/auth/logout` | Clear auth cookie |
+| `GET /api/v1/auth/me` | Get current user |
+| `GET /api/v1/tasks` | List user's tasks |
+| `POST /api/v1/tasks` | Create task |
+| `GET /api/v1/tasks/:id` | Get task by ID |
+| `PUT /api/v1/tasks/:id` | Update task |
+| `DELETE /api/v1/tasks/:id` | Delete task |
+| `GET /api/v1/admin/users` | List all users (admin) |
+| `GET /api/v1/admin/tasks` | List all tasks (admin) |
+| `DELETE /api/v1/admin/tasks/:id` | Delete any task (admin) |
+| `PUT /api/v1/admin/users/:id/role` | Update user role (admin) |
+
+> Backward-compatible unversioned routes (`/api/auth/*`, `/api/tasks/*`) are also supported.
+
+---
+
+## Role-Based Access Control (RBAC)
+
+Users are assigned one of two roles:
+
+| Role | Permissions |
+|------|------------|
+| **user** (default) | Register, login, CRUD own tasks, view own profile |
+| **admin** | All user permissions + view all users, view/delete all tasks, change user roles |
+
+**How it works:**
+- Role is stored in the User model (`role: "user" | "admin"`)
+- Role is included in JWT token payload
+- Backend middleware `adminMiddleware` checks role before granting access to admin routes
+- Admin routes return `403 Forbidden` for non-admin users
+
+---
+
+## API Documentation (Postman)
+
+A complete Postman collection is included at `TaskFlow.postman_collection.json`.
+
+**How to use:**
+1. Open Postman
+2. Click **Import** → select `TaskFlow.postman_collection.json`
+3. Set the `baseUrl` variable to your server URL (default: `http://localhost:3000`)
+4. Start testing endpoints!
+
+The collection includes:
+- All auth endpoints with example requests/responses
+- All CRUD task endpoints
+- Admin-only endpoints
+- Error response examples
+- Query parameter documentation
+
+---
+
+## Docker Deployment
+
+### Quick Start with Docker Compose
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd sell
+
+# Start all services (MongoDB + Backend + Frontend)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+This starts:
+- **MongoDB** on port 27017
+- **Backend API** on port 5000
+- **Frontend** on port 3000
+
+### Build Individual Images
+
+```bash
+# Backend
+cd backend
+docker build -t taskflow-backend .
+
+# Frontend
+cd ..
+docker build -t taskflow-frontend .
+```
+
+---
+
+## Scalability Notes
+
+### Current Architecture Strengths
+- **Modular structure**: Backend routes, middleware, models, and utils are cleanly separated, making it easy to add new modules (e.g., comments, notifications, teams).
+- **Database indexing**: Compound indexes on `user+status` and `user+title` for efficient queries.
+- **Pagination**: All list endpoints support configurable pagination to avoid unbounded queries.
+- **Stateless auth**: JWT-based authentication allows horizontal scaling without shared session state.
+
+### Scaling Strategies for Production
+
+#### 1. Horizontal Scaling & Load Balancing
+- Deploy multiple backend instances behind a load balancer (Nginx, AWS ALB, or Kubernetes Ingress).
+- Since auth is stateless (JWT in cookies), any instance can handle any request — no sticky sessions needed.
+- Use PM2 cluster mode to utilize all CPU cores on a single server.
+
+#### 2. Caching Layer (Redis)
+- Add Redis for:
+  - **Session caching**: Cache user profiles to reduce DB lookups on every request.
+  - **API response caching**: Cache frequently-read task lists with TTL-based invalidation.
+  - **Rate limiting**: Implement sliding-window rate limiting per IP/user.
+- Example: Cache `GET /api/v1/tasks` results per user with a 30-second TTL, invalidated on create/update/delete.
+
+#### 3. Database Scaling
+- **MongoDB Atlas** auto-scaling with sharding on the `user` field for task collections.
+- **Read replicas**: Route read-heavy queries (task listing, search) to secondary replicas.
+- **Connection pooling**: Already implemented via Mongoose singleton pattern.
+
+#### 4. Microservices Evolution
+- Current monolithic backend can be split into:
+  - **Auth Service**: User registration, login, token management
+  - **Task Service**: CRUD operations for tasks
+  - **Admin Service**: User management, analytics
+  - **Notification Service**: Email/push notifications on task status changes
+- Use a message queue (RabbitMQ/Redis Streams) for async communication between services.
+
+#### 5. API Gateway
+- Add an API Gateway (Kong, AWS API Gateway) for:
+  - Rate limiting per API key
+  - Request/response transformation
+  - API analytics and monitoring
+  - SSL termination
+
+#### 6. Monitoring & Observability
+- Integrate structured logging (Winston/Pino) with log aggregation (ELK Stack, Datadog).
+- Add health check endpoints (already implemented: `/api/v1/health`).
+- Implement metrics collection (Prometheus + Grafana) for request latency, error rates, and throughput.
+
+#### 7. CI/CD & DevOps
+- Docker containers for consistent deployment (Dockerfiles included).
+- Docker Compose for local development and testing.
+- GitHub Actions for automated testing, linting, and deployment.
+
+---
 
 ## License
 

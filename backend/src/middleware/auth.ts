@@ -15,6 +15,7 @@ function getJwtSecret(): string {
 export interface JwtPayload {
   userId: string;
   email: string;
+  role: string;
 }
 
 export function signToken(payload: JwtPayload): string {
@@ -68,5 +69,15 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   }
   // Attach user to request object
   (req as Request & { user: JwtPayload }).user = user;
+  next();
+}
+
+// Express middleware for admin-only routes
+export function adminMiddleware(req: Request, res: Response, next: NextFunction): void {
+  const user = (req as Request & { user: JwtPayload }).user;
+  if (!user || user.role !== "admin") {
+    res.status(403).json({ success: false, message: "Access denied. Admin privileges required." });
+    return;
+  }
   next();
 }

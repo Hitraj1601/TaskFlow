@@ -1,0 +1,440 @@
+{
+  "info": {
+    "name": "TaskFlow API",
+    "description": "Complete API documentation for TaskFlow - Task Management Application with Authentication & Role-Based Access Control.\n\n## Authentication\nAll authenticated endpoints use JWT tokens stored in HTTP-only cookies. Login or register first, then the auth cookie is automatically sent with subsequent requests.\n\n## API Versioning\nAll endpoints are available under `/api/v1/` prefix. Unversioned `/api/` routes are also supported for backward compatibility.\n\n## Roles\n- **user**: Can manage their own tasks\n- **admin**: Can manage all users and tasks",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints for user registration, login, logout, and profile retrieval.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Create a new user account. Automatically sets JWT auth cookie on success.\n\n**Validation Rules:**\n- name: 2-100 characters, required\n- email: valid email format, unique, required\n- password: 6-128 characters, required\n\n**Default Role:** `user`"
+          },
+          "response": [
+            {
+              "name": "201 - Registration Successful",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Registration successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\",\n      \"role\": \"user\",\n      \"encryptedEmail\": \"U2FsdGVkX1+...\"\n    }\n  }\n}"
+            },
+            {
+              "name": "400 - Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"email\", \"message\": \"Please provide a valid email address\" }\n  ]\n}"
+            },
+            {
+              "name": "409 - User Already Exists",
+              "status": "Conflict",
+              "code": 409,
+              "body": "{\n  \"success\": false,\n  \"message\": \"User with this email already exists\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Authenticate user and receive JWT cookie. The token is stored in an HTTP-only cookie (7-day expiry)."
+          },
+          "response": [
+            {
+              "name": "200 - Login Successful",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\",\n      \"role\": \"user\",\n      \"encryptedEmail\": \"U2FsdGVkX1+...\"\n    }\n  }\n}"
+            },
+            {
+              "name": "401 - Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Invalid email or password\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            },
+            "description": "Clear the authentication JWT cookie."
+          },
+          "response": [
+            {
+              "name": "200 - Logout Successful",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Logged out successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Get the currently authenticated user's profile. Requires valid JWT cookie."
+          },
+          "response": [
+            {
+              "name": "200 - User Profile",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\",\n      \"role\": \"user\"\n    }\n  }\n}"
+            },
+            {
+              "name": "401 - Not Authenticated",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Not authenticated\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "description": "CRUD endpoints for task management. All endpoints require authentication (JWT cookie).",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks?page=1&limit=10&status=&search=&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number (default: 1)" },
+                { "key": "limit", "value": "10", "description": "Items per page, max 50 (default: 10)" },
+                { "key": "status", "value": "", "description": "Filter by status: todo, in-progress, done" },
+                { "key": "search", "value": "", "description": "Search by title (case-insensitive)" },
+                { "key": "sortBy", "value": "createdAt", "description": "Sort field (default: createdAt)" },
+                { "key": "sortOrder", "value": "desc", "description": "Sort direction: asc or desc" }
+              ]
+            },
+            "description": "List the authenticated user's tasks with pagination, filtering by status, and search by title."
+          },
+          "response": [
+            {
+              "name": "200 - Tasks List",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"tasks\": [\n      {\n        \"_id\": \"65f1b2c3d4e5f6a7b8c9d0e1\",\n        \"title\": \"Deploy application\",\n        \"description\": \"Deploy to Vercel\",\n        \"status\": \"todo\",\n        \"user\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n        \"createdAt\": \"2026-02-25T10:30:00.000Z\",\n        \"updatedAt\": \"2026-02-25T10:30:00.000Z\"\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 10,\n      \"total\": 1,\n      \"totalPages\": 1,\n      \"hasNext\": false,\n      \"hasPrev\": false\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Complete API integration\",\n  \"description\": \"Connect frontend to backend APIs\",\n  \"status\": \"todo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks"]
+            },
+            "description": "Create a new task for the authenticated user.\n\n**Validation:**\n- title: required, max 200 characters\n- status: optional, one of: todo, in-progress, done (default: todo)\n- description: optional"
+          },
+          "response": [
+            {
+              "name": "201 - Task Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Task created successfully\",\n  \"data\": {\n    \"task\": {\n      \"_id\": \"65f1b2c3d4e5f6a7b8c9d0e1\",\n      \"title\": \"Complete API integration\",\n      \"description\": \"Connect frontend to backend APIs\",\n      \"status\": \"todo\",\n      \"user\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"createdAt\": \"2026-02-25T10:30:00.000Z\",\n      \"updatedAt\": \"2026-02-25T10:30:00.000Z\"\n    }\n  }\n}"
+            },
+            {
+              "name": "400 - Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"title\", \"message\": \"Title is required\" }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Task by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", ":id"],
+              "variable": [
+                { "key": "id", "value": "65f1b2c3d4e5f6a7b8c9d0e1", "description": "Task MongoDB ObjectId" }
+              ]
+            },
+            "description": "Get a specific task by its ID. Only the task owner can access it."
+          },
+          "response": [
+            {
+              "name": "200 - Task Found",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"task\": {\n      \"_id\": \"65f1b2c3d4e5f6a7b8c9d0e1\",\n      \"title\": \"Complete API integration\",\n      \"description\": \"Connect frontend to backend APIs\",\n      \"status\": \"todo\",\n      \"createdAt\": \"2026-02-25T10:30:00.000Z\",\n      \"updatedAt\": \"2026-02-25T10:30:00.000Z\"\n    }\n  }\n}"
+            },
+            {
+              "name": "404 - Task Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Task not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated task title\",\n  \"status\": \"in-progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", ":id"],
+              "variable": [
+                { "key": "id", "value": "65f1b2c3d4e5f6a7b8c9d0e1", "description": "Task MongoDB ObjectId" }
+              ]
+            },
+            "description": "Update a task (partial updates supported). Only the task owner can update it.\n\n**Updatable fields:** title, description, status"
+          },
+          "response": [
+            {
+              "name": "200 - Task Updated",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Task updated successfully\",\n  \"data\": {\n    \"task\": {\n      \"_id\": \"65f1b2c3d4e5f6a7b8c9d0e1\",\n      \"title\": \"Updated task title\",\n      \"description\": \"Connect frontend to backend APIs\",\n      \"status\": \"in-progress\",\n      \"updatedAt\": \"2026-02-25T11:00:00.000Z\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", ":id"],
+              "variable": [
+                { "key": "id", "value": "65f1b2c3d4e5f6a7b8c9d0e1", "description": "Task MongoDB ObjectId" }
+              ]
+            },
+            "description": "Delete a task by ID. Only the task owner can delete it."
+          },
+          "response": [
+            {
+              "name": "200 - Task Deleted",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Task deleted successfully\"\n}"
+            },
+            {
+              "name": "404 - Task Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Task not found\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Admin-only endpoints for managing all users and tasks. Requires admin role.",
+      "item": [
+        {
+          "name": "List All Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users"]
+            },
+            "description": "List all registered users. **Admin only.**"
+          },
+          "response": [
+            {
+              "name": "200 - Users List",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"users\": [\n      {\n        \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n        \"name\": \"John Doe\",\n        \"email\": \"john@example.com\",\n        \"role\": \"user\",\n        \"createdAt\": \"2026-02-25T10:00:00.000Z\"\n      }\n    ],\n    \"total\": 1\n  }\n}"
+            },
+            {
+              "name": "403 - Access Denied",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Access denied. Admin privileges required.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "List All Tasks (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tasks?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "tasks"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "List all tasks from all users with pagination. **Admin only.**"
+          },
+          "response": [
+            {
+              "name": "200 - All Tasks",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"tasks\": [...],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 10,\n      \"total\": 25,\n      \"totalPages\": 3,\n      \"hasNext\": true,\n      \"hasPrev\": false\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Any Task (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tasks/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "tasks", ":id"],
+              "variable": [
+                { "key": "id", "value": "65f1b2c3d4e5f6a7b8c9d0e1" }
+              ]
+            },
+            "description": "Delete any task regardless of owner. **Admin only.**"
+          },
+          "response": [
+            {
+              "name": "200 - Deleted",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Task deleted successfully by admin\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/:id/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users", ":id", "role"],
+              "variable": [
+                { "key": "id", "value": "65f1a2b3c4d5e6f7a8b9c0d1" }
+              ]
+            },
+            "description": "Change a user's role to 'user' or 'admin'. Cannot change your own role. **Admin only.**"
+          },
+          "response": [
+            {
+              "name": "200 - Role Updated",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"User role updated to admin\",\n  \"data\": {\n    \"user\": {\n      \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\",\n      \"role\": \"admin\"\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "health"]
+        },
+        "description": "Health check endpoint to verify the API is running."
+      },
+      "response": [
+        {
+          "name": "200 - Healthy",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"TaskFlow API v1 is running\",\n  \"version\": \"1.0.0\"\n}"
+        }
+      ]
+    }
+  ]
+}

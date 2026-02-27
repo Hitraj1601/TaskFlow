@@ -6,9 +6,10 @@ import { useState } from "react";
 
 interface NavbarProps {
   userName?: string;
+  userRole?: string;
 }
 
-export default function Navbar({ userName }: NavbarProps) {
+export default function Navbar({ userName, userRole }: NavbarProps) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -40,9 +41,16 @@ export default function Navbar({ userName }: NavbarProps) {
 
           <div className="flex items-center gap-4">
             {userName && (
-              <span className="text-sm text-gray-600">
-                Hello, <span className="font-semibold text-gray-900">{userName}</span>
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  Hello, <span className="font-semibold text-gray-900">{userName}</span>
+                </span>
+                {userRole === "admin" && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+                    Admin
+                  </span>
+                )}
+              </div>
             )}
             <button
               onClick={handleLogout}

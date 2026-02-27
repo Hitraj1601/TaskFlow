@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: taskflow-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: taskflow
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - taskflow-network
+
+  # Backend (Express.js)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: taskflow-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/taskflow?authSource=admin
+      - JWT_SECRET=${JWT_SECRET:-your-strong-jwt-secret-change-in-production}
+      - AES_SECRET_KEY=${AES_SECRET_KEY:-your-aes-secret-key-32-characters}
+      - FRONTEND_URL=http://localhost:3000
+    depends_on:
+      - mongodb
+    networks:
+      - taskflow-network
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskflow-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/taskflow?authSource=admin
+      - JWT_SECRET=${JWT_SECRET:-your-strong-jwt-secret-change-in-production}
+      - AES_SECRET_KEY=${AES_SECRET_KEY:-your-aes-secret-key-32-characters}
+    depends_on:
+      - backend
+      - mongodb
+    networks:
+      - taskflow-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  taskflow-network:
+    driver: bridge

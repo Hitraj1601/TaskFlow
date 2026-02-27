@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     const token = signToken({
       userId: user._id.toString(),
       email: user.email,
+      role: user.role,
     });
     await setAuthCookie(token);
     const encryptedEmail = encrypt(user.email);
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
           id: user._id,
           name: user.name,
           email: user.email,
+          role: user.role,
           encryptedEmail,
         },
       },
